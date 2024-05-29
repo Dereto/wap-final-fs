@@ -11,9 +11,26 @@ const storage = multer.diskStorage({
         cb(null, 'uploads/');
     },
     filename: function (req, file, cb) {
-        cb(null, file.originalname); // Appending original filename
+        const ext = path.extname(file.originalname);
+        const filename = path.basename(file.originalname, ext); // Extract filename without extension
+
+        // Check if a file with the same name (excluding extension) exists
+        fs.access(`uploads/${filename}.png`, fs.constants.F_OK, (errPNG) => {
+            if (!errPNG) {
+                // If a PNG file with the same name exists, delete it
+                fs.unlinkSync(`uploads/${filename}.png`);
+            }
+            fs.access(`uploads/${filename}.jpg`, fs.constants.F_OK, (errJPG) => {
+                if (!errJPG) {
+                    // If a JPG file with the same name exists, delete it
+                    fs.unlinkSync(`uploads/${filename}.jpg`);
+                }
+                cb(null, `${filename}${ext}`); // Use the original filename without any changes
+            });
+        });
     }
 });
+
 
 // Initialize Multer with storage settings
 const upload = multer({ storage: storage });
